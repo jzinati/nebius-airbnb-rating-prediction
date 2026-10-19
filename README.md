@@ -32,6 +32,13 @@ uv run python -m src.evaluate
 # validate it on the other. This does not read the project's test split.
 uv run python -m src.city_validation
 
+# Optional: a fixed, 20-trial validation-only XGBoost search.
+# It does not read test.csv.
+uv run python -m src.tune --trials 20
+
+# Explore executed metrics, candidate settings, and Optuna trials locally.
+uv run streamlit run app.py
+
 # Inference for a new, unlabeled listing CSV
 uv run python -m src.predict --input data/new_listings.csv --output results/predictions.csv
 
@@ -62,7 +69,9 @@ The selected XGBoost model was then refit once on training + validation rows and
 
 The final-test score is weaker than the validation score, a useful reminder that one validation split is an estimate rather than a guarantee. The test-evaluation command refuses to overwrite existing final-test metrics, helping preserve that boundary during future experimentation.
 
-Subsequent feature experiments deliberately did **not** reuse that test set. The current prospective candidate is F4: price/capacity features, amenities, training-only top-50 amenity flags, and missingness indicators, all **without** `host_is_superhost`. Its validation result is **RMSE 0.4067, MAE 0.2237, R² 0.1583**. This is a validation observation, not a new final-test claim.
+Subsequent feature experiments deliberately did **not** reuse that test set. The current prospective candidate is F4: price/capacity features, amenities, training-only top-50 amenity flags, and missingness indicators, all **without** `host_is_superhost`.
+
+A seeded 20-trial Optuna search varied XGBoost tree count, depth, learning rate, row/column sampling, child weight, and L1/L2 regularisation. Its best validation trial achieved **RMSE 0.4055, MAE 0.2230, R² 0.1633**, versus 0.4067 for the original F4 candidate. This is a small validation-only improvement and **not** a new final-test claim. The exact trial settings and all candidates are available in the local Streamlit dashboard and [published validation summary](docs/published_validation_results.csv).
 
 ## Cross-city robustness check
 

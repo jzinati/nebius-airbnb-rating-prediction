@@ -127,6 +127,23 @@ To make a final performance claim for the eventual prospective model, obtain a n
 
 **Decision:** do not claim that the random-split improvement transfers to a new city. The model performs much worse across cities, particularly from Los Angeles to New York. This is an informative negative result: price, room type, coordinates, amenities, and missingness do not yet capture enough city-specific context. It does not reproduce or disprove the remembered City-3 competition result, because the checked-in City-3 files cannot be aligned to targets.
 
+## Run H1 — bounded Optuna hyperparameter search
+
+**Status:** executed on validation only; the original test split was not read.
+
+**Question:** Can a small, reproducible search improve the F4-without-Superhost XGBoost configuration without changing the feature set or introducing an unlimited tuning process?
+
+**Protocol:** 20 seeded Optuna TPE trials fitted on the fixed 40,781-row training split and ranked by validation RMSE on the fixed 8,739-row validation split. The search varied `n_estimators` (250–900), `max_depth` (3–8), `learning_rate` (0.01–0.12), `subsample`, `colsample_bytree`, `min_child_weight`, `reg_alpha`, and `reg_lambda`. It did not inspect `test.csv`, refit on train + validation, or select features.
+
+| Candidate | Validation RMSE | Validation MAE | Validation R² |
+| --- | ---: | ---: | ---: |
+| F4 prospective hand-picked XGBoost | 0.4067 | 0.2237 | 0.1583 |
+| H1 Optuna best trial | 0.4055 | 0.2230 | 0.1633 |
+
+**Best trial parameters:** 450 trees; depth 6; learning rate 0.02925; subsample 0.75193; column sample 0.86415; minimum child weight 1.4722; L1 regularisation 0.000289; L2 regularisation 0.69664.
+
+**Decision:** retain this configuration as the current validation-selected prospective candidate. The gain is 0.0012 RMSE, so it is too small to call a material breakthrough and may partly reflect selection noise from repeated validation use. Do not evaluate it on the original test split. A new untouched temporal or city holdout is required before making a final-performance claim.
+
 ## Benchmark audit: is RMSE below 0.39 a comparable target?
 
 The original team repository contains saved metrics for two relevant models. Its plain XGBoost run reported train RMSE 0.3315 and test RMSE 0.4139. Its mixture-of-experts run reported train RMSE 0.3880, validation RMSE 0.4012, and test RMSE 0.4067.
@@ -149,6 +166,7 @@ The experiments below are intentionally ordered from lowest risk and easiest to 
 | F4 | Missingness itself may describe listing completeness or host behaviour. | Indicators for high-missingness listing-time fields. | F3-without-Superhost feature set and selection protocol. | Retained: small prospective validation gain. | Executed |
 | F5 | Nearby listings tend to share market conditions and guest expectations. | A coarse, fixed location cell from rounded latitude/longitude. | No target encoding; same split. | Keep only if improvement is stable and cardinality remains easy to explain. | Planned |
 | F6 | The random split may be optimistic. | City-held-out validation. | Fixed F4 prospective model; final test set untouched. | Use as a robustness check, not as a chance to keep trying models on test. | Executed; transfer was poor. |
+| H1 | A compact search may improve the fixed XGBoost configuration. | 20 seeded Optuna trials over tree complexity, sampling, and regularisation. | F4 features; no Superhost; test set untouched. | Keep only as a validation-selected candidate and record every trial. | Executed; RMSE 0.4055. |
 
 ## Explicit non-goals for the next iteration
 
@@ -159,7 +177,7 @@ The experiments below are intentionally ordered from lowest risk and easiest to 
 
 ## Decision for the next implementation
 
-F1–F4 and F6 have now been run. Do not add model complexity yet. First recover the competition evaluator or obtain a properly keyed City-3 target file. In parallel, F5 may be tested as a separate, explainable random-split experiment, but any gain must then be checked on a city-held-out or time-held-out dataset before it is presented as portable.
+F1–F4, F6, and H1 have now been run. Do not expand the hyperparameter search purely to chase the remembered threshold. First recover the competition evaluator or obtain a properly keyed City-3 target file. In parallel, F5 may be tested as a separate, explainable random-split experiment, but any gain must then be checked on a city-held-out or time-held-out dataset before it is presented as portable.
 
 Do not combine F5 with other new feature families in one run: otherwise we will not know which change helped. The Superhost issue has been resolved for the prospective variant; the cross-city result shows that validation design—not more tuning—is the current limiting factor.
 
