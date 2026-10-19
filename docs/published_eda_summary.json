@@ -1,0 +1,62 @@
+{
+  "rows": 40781,
+  "target": {
+    "count": 40781.0,
+    "mean": 4.755537873029106,
+    "std": 0.44226473996317095,
+    "min": 0.0,
+    "1%": 3.0,
+    "5%": 4.0,
+    "25%": 4.7,
+    "50%": 4.89,
+    "75%": 5.0,
+    "95%": 5.0,
+    "99%": 5.0,
+    "max": 5.0
+  },
+  "share_perfect_score": 0.31907015521934234,
+  "share_below_4": 0.02640935729874206,
+  "missingness_percent": {
+    "host_response_time": 27.34116377724921,
+    "host_response_rate": 27.34116377724921,
+    "price": 27.152350359235918,
+    "beds": 26.75020230009073,
+    "host_acceptance_rate": 25.465290208675604,
+    "bedrooms": 10.382285868419117,
+    "host_is_superhost": 2.7733503347146957,
+    "host_listings_count": 0.3531056129079719,
+    "host_total_listings_count": 0.3531056129079719
+  },
+  "absolute_numeric_correlations": {
+    "estimated_occupancy_l365d": 0.10791451217371313,
+    "host_tenure_days": 0.1029270272772796,
+    "host_total_listings_count": 0.09284689373701845,
+    "host_listings_count": 0.08235797243649937,
+    "host_response_rate": 0.066975605555062,
+    "longitude": 0.06354512763306537,
+    "latitude": 0.06292267818343202,
+    "maximum_nights": 0.054995234576338266,
+    "bedrooms": 0.04303037135592571,
+    "beds": 0.03877308427930881
+  },
+  "target_by_room_type": {
+    "count": {
+      "Entire home/apt": 27244,
+      "Hotel room": 164,
+      "Private room": 13163,
+      "Shared room": 210
+    },
+    "mean": {
+      "Entire home/apt": 4.781726618705036,
+      "Hotel room": 4.4696341463414635,
+      "Private room": 4.706829750056978,
+      "Shared room": 4.634333333333333
+    },
+    "std": {
+      "Entire home/apt": 0.3988910213402279,
+      "Hotel room": 0.7121736279678481,
+      "Private room": 0.5061612192489569,
+      "Shared room": 0.7595514814352998
+    }
+  }
+}

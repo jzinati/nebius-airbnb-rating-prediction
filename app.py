@@ -15,6 +15,8 @@ ROOT = Path(__file__).parent
 RESULTS_DIR = ROOT / "results"
 ARTIFACTS_DIR = ROOT / "artifacts"
 PUBLISHED_RESULTS = ROOT / "docs" / "published_validation_results.csv"
+EDA_SUMMARY = RESULTS_DIR / "eda_summary.json"
+PUBLISHED_EDA_SUMMARY = ROOT / "docs" / "published_eda_summary.json"
 
 
 def _parameters_to_columns(data: pd.DataFrame) -> pd.DataFrame:
@@ -55,6 +57,13 @@ def load_optuna_trials() -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+@st.cache_data
+def load_eda_summary() -> dict:
+    """Load the local training-only summary, or the committed executed snapshot."""
+    path = EDA_SUMMARY if EDA_SUMMARY.exists() else PUBLISHED_EDA_SUMMARY
+    return json.loads(path.read_text())
+
+
 def metric_cards(row: pd.Series) -> None:
     left, middle, right = st.columns(3)
     left.metric("Validation RMSE", f"{row['rmse']:.4f}")
@@ -69,6 +78,59 @@ st.info(
     "Read the labels carefully: results including `host_is_superhost` are historical, "
     "leakage-sensitive comparisons. The recommended prospective candidate excludes it."
 )
+
+st.header("Exploratory data analysis")
+st.caption("Training split only (40,781 listings). The validation and test splits are not used here.")
+eda = load_eda_summary()
+target = eda["target"]
+target_left, target_middle, target_right, target_last = st.columns(4)
+target_left.metric("Mean rating", f"{target['mean']:.3f}")
+target_middle.metric("Rating standard deviation", f"{target['std']:.3f}")
+target_right.metric("Perfect 5.0 ratings", f"{eda['share_perfect_score']:.1%}")
+target_last.metric("Ratings below 4.0", f"{eda['share_below_4']:.1%}")
+
+target_quantiles = pd.DataFrame(
+    {
+        "quantile": ["1%", "5%", "25%", "50%", "75%", "95%", "99%"],
+        "rating": [target[key] for key in ["1%", "5%", "25%", "50%", "75%", "95%", "99%"]],
+    }
+).set_index("quantile")
+eda_left, eda_right = st.columns(2)
+with eda_left:
+    st.markdown("**Target quantiles**")
+    st.bar_chart(target_quantiles)
+    st.caption("Ratings cluster near 5.0, so predicting the comparatively rare lower ratings drives much of the error.")
+with eda_right:
+    st.markdown("**Missingness in listing-time fields**")
+    missingness = pd.DataFrame.from_dict(eda["missingness_percent"], orient="index", columns=["missing percent"])
+    st.bar_chart(missingness.sort_values("missing percent", ascending=False))
+    st.caption("These observable gaps motivated the F4 missingness indicators; imputation remains inside the model pipeline.")
+
+association_left, association_right = st.columns(2)
+with association_left:
+    st.markdown("**Largest absolute numeric associations with rating**")
+    correlations = pd.DataFrame.from_dict(
+        eda["absolute_numeric_correlations"], orient="index", columns=["absolute correlation"]
+    )
+    st.bar_chart(correlations.sort_values("absolute correlation", ascending=False))
+    st.caption("These are univariate associations, not causal effects. Their small size supports using nonlinear models and interactions.")
+with association_right:
+    st.markdown("**Ratings by room type**")
+    room_type = pd.DataFrame(eda["target_by_room_type"]).rename_axis("room type").reset_index()
+    room_type = room_type.rename(columns={"count": "listings", "mean": "mean rating", "std": "rating std"})
+    st.dataframe(room_type, use_container_width=True, hide_index=True, column_config={
+        "mean rating": st.column_config.NumberColumn(format="%.3f"),
+        "rating std": st.column_config.NumberColumn(format="%.3f"),
+    })
+    st.caption("Room type is a useful listing-time signal, but small hotel/shared-room samples make their averages less stable.")
+
+with st.expander("EDA decisions and leakage note", expanded=False):
+    st.markdown(
+        "- The target is ceiling-heavy, so a low RMSE requires separating the smaller group of lower-rated listings.\n"
+        "- Price, capacity, amenities, and missingness are available at listing time and motivated F1–F4.\n"
+        "- `host_is_superhost` is predictive but excluded from the prospective candidate because Superhost status uses historical performance, including rating criteria.\n"
+        "- The LA↔NY check showed that random-split gains do not establish cross-city transfer."
+    )
 
 experiments = load_experiments()
 if experiments.empty:
