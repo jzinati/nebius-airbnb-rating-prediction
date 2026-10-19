@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+catboost_info/
+.pytest_cache/
+
+# Data may have source-specific licensing or privacy constraints. Download it locally.
+data/raw/
+data/processed/
+
+# Reproducible outputs that should be regenerated locally.
+artifacts/*.joblib
+artifacts/*.json
+results/*.csv
+results/*.json
+!artifacts/.gitkeep
+!results/.gitkeep

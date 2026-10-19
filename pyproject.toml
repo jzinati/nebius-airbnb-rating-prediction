@@ -1,0 +1,20 @@
+[project]
+name = "airbnb-rating-learning-project"
+version = "0.1.0"
+description = "A small, reproducible Airbnb listing-rating regression project."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "catboost>=1.2",
+  "joblib>=1.3",
+  "pandas>=2.1",
+  "scikit-learn>=1.4",
+  "xgboost>=2.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
